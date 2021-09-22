@@ -33,4 +33,5 @@ setup(
     python_requires=">=3.8",
     packages=["aionanoleaf"],
     package_data={"aionanoleaf": ["py.typed"]},
+    install_requires=["aiohttp"],
 )

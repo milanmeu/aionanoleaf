@@ -18,7 +18,7 @@ setup(
         "Say Thanks!": "https://saythanks.io/to/milan.meulemans@live.be",
         "Bug Tracker": "https://github.com/milanmeu/aionanoleaf/issues",
         "Source Code": "https://github.com/milanmeu/aionanoleaf",
-        "Documentation": "https://github.com/milanmeu/aionanoleaf/issues",
+        "Documentation": "https://github.com/milanmeu/aionanoleaf/blob/main/README.md",
     },
     classifiers=[
         "Programming Language :: Python :: 3",

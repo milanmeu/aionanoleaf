@@ -18,11 +18,17 @@
 """Nanoleaf."""
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
+from typing import Any, Callable
 
-from aiohttp import ClientConnectorError, ClientResponse, ClientSession
-
+from aiohttp import ClientConnectorError, ClientResponse, ClientSession, ClientError, ClientTimeout
+from .events import EffectsEvent, Event, LayoutEvent, StateEvent, TouchEvent
+from .errors import InvalidEffect, InvalidToken, NoAuthToken, Unauthorized, Unavailable
 from .typing import InfoData
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Nanoleaf:
@@ -179,27 +185,28 @@ class Nanoleaf:
         self, method: str, path: str, data: dict | None = None
     ) -> ClientResponse:
         """Make an authorized request to Nanoleaf with an auth_token."""
-        try:
-            resp = await self._session.request(
-                method, f"{self._api_url}/{self.auth_token}/{path}", data=json.dumps(data)
-            )
-        except ClientConnectorError as err:
-            raise Unavailable from err
+        resp = await self._session.request(
+            method, f"{self._api_url}/{self.auth_token}/{path}", data=json.dumps(data),
+        )
         if resp.status == 401:
             raise InvalidToken
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except ClientConnectorError:
+            raise Unavailable
         return resp
 
     async def authorize(self) -> None:
         """
         Authorize to get a new Nanoleaf auth_token.
 
-        Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern and call authorize() within 30 seconds.
+        Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern
+        and call authorize() within 30 seconds.
         """
         async with self._session.post(f"{self._api_url}/new") as resp:
             if resp.status == 403:
                 raise Unauthorized(
-                    "Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern and call authorize() within 30 seconds."
+                    "Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern"
                 )
             try:
                 resp.raise_for_status()
@@ -271,26 +278,84 @@ class Nanoleaf:
         else:
             await self.set_brightness(0, transition=transition)
 
+    async def receive_events(
+        self,
+        queue: asyncio.Queue,
+        event_type_ids: tuple = (
+            StateEvent.EVENT_TYPE_ID,
+            LayoutEvent.EVENT_TYPE_ID,
+            EffectsEvent.EVENT_TYPE_ID,
+            TouchEvent.EVENT_TYPE_ID,
+        ),
+        port: int | None = None,
+    ):
+        """Iterate over the incoming events."""
+        while True:
+            path = f"events?id={event_type_ids[0]}"
+            for event_type_id in event_type_ids[1:]:
+                path += f",{event_type_id}"
+            try:
+                async with await self._session.get(
+                    f"{self._api_url}/{self.auth_token}/{path}",
+                    headers=None if port is None else {"TouchEventsPort": port},
+                    timeout=ClientTimeout(total=None, sock_connect=5, sock_read=None),
+                ) as resp:
+                    resp: ClientResponse
+                    async for id_line in resp.content:
+                        data_line = await resp.content.readline()
+                        await resp.content.readline()  # Empty line
+                        event_type_id = int(str(id_line)[6:-3])
+                        data = json.loads(str(data_line)[8:-3])
+                        events: list[dict] = data["events"]
+                        for event_data in events:
+                            if event_type_id == StateEvent.EVENT_TYPE_ID:
+                                event_obj = StateEvent(event_data)
+                            elif event_type_id == LayoutEvent.EVENT_TYPE_ID:
+                                event_obj = LayoutEvent(event_data)
+                            elif event_type_id == EffectsEvent.EVENT_TYPE_ID:
+                                event_obj = EffectsEvent(event_data)
+                            elif event_type_id == TouchEvent.EVENT_TYPE_ID:
+                                event_obj = TouchEvent(event_data)
+                            queue.put_nowait(event_obj)
+            except ClientError:
+                await asyncio.sleep(5)
 
-class NanoleafException(Exception):
-    """General Nanoleaf exception."""
+    async def listen_events(self,
+        state_callback: Callable[[StateEvent], Any] | None = None,
+        layout_callback: Callable[[LayoutEvent], Any] | None = None,
+        effects_callback: Callable[[EffectsEvent], Any] | None = None,
+        touch_callback: Callable[[TouchEvent], Any] | None = None
+    ):
+        """Listen to events, apply changes to object and call callback with event."""
+        event_type_ids = []
+        if state_callback is not None:
+            event_type_ids.append(StateEvent.EVENT_TYPE_ID)
+        if layout_callback is not None:
+            event_type_ids.append(LayoutEvent.EVENT_TYPE_ID)
+        if effects_callback is not None:
+            event_type_ids.append(EffectsEvent.EVENT_TYPE_ID)
+        if touch_callback is not None:
+            event_type_ids.append(TouchEvent.EVENT_TYPE_ID)
+        pending_events = asyncio.Queue()
+        receive_events_task = asyncio.create_task(self.receive_events(pending_events, tuple(event_type_ids)))
+        while True:
+            try:
+                event: Event = await pending_events.get()
+            except asyncio.CancelledError:
+                receive_events_task.cancel()
+                await receive_events_task
+                return
+            if isinstance(event, StateEvent):
+                await self._set_state_from_event(event)
+                if state_callback is not None:
+                    asyncio.create_task(state_callback(event))
+            elif isinstance(event, LayoutEvent) and layout_callback is not None:
+                asyncio.create_task(layout_callback(event))
+            elif isinstance(event, EffectsEvent) and effects_callback is not None:
+                asyncio.create_task(effects_callback(event))
+            elif isinstance(event, TouchEvent) and touch_callback is not None:
+                asyncio.create_task(touch_callback(event))
 
-
-class Unavailable(NanoleafException):
-    """Device is unavailable."""
-
-
-class Unauthorized(NanoleafException):
-    """Not authorizing new tokens."""
-
-
-class InvalidToken(NanoleafException):
-    """Invalid token specified."""
-
-
-class InvalidEffect(NanoleafException, ValueError):
-    """Invalid effect specified."""
-
-
-class NoAuthToken(NanoleafException):
-    """No auth_token specified."""
+    async def _set_state_from_event(self, state_event: StateEvent) -> None:
+        """Update object state based on a state event."""
+        self._info["state"][state_event.attribute]["value"] = state_event.value

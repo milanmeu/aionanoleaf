@@ -179,15 +179,15 @@ class Nanoleaf:
         self, method: str, path: str, data: dict | None = None
     ) -> ClientResponse:
         """Make an authorized request to Nanoleaf with an auth_token."""
-        resp = await self._session.request(
-            method, f"{self._api_url}/{self.auth_token}/{path}", data=json.dumps(data)
-        )
+        try:
+            resp = await self._session.request(
+                method, f"{self._api_url}/{self.auth_token}/{path}", data=json.dumps(data)
+            )
+        except ClientConnectorError as err:
+            raise Unavailable from err
         if resp.status == 401:
             raise InvalidToken
-        try:
-            resp.raise_for_status()
-        except ClientConnectorError:
-            raise Unavailable
+        resp.raise_for_status()
         return resp
 
     async def authorize(self) -> None:

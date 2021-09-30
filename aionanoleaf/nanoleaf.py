@@ -232,6 +232,42 @@ class Nanoleaf:
         resp = await self._request("get", "")
         self._info = await resp.json()
 
+    async def set_state(
+        self,
+        on: bool | None = None,
+        brightness: int | None = None,
+        brightness_relative: bool = False,
+        brightness_transition: int | None = None,
+        color_temperature: int | None = None,
+        color_temperature_relative: bool = False,
+        hue: int | None = None,
+        hue_relative: bool = False,
+        saturation: int | None = None,
+        saturation_relative: bool = False,
+    ) -> None:
+        """Write a new state to Nanoleaf."""
+        data = {}
+
+        async def _add_topic_to_data(
+            topic: str, value: int | bool | None, relative: bool = False
+        ) -> None:
+            if value is not None:
+                if relative:
+                    data[topic] = {"increment": value}
+                else:
+                    data[topic] = {"value": value}
+
+        await _add_topic_to_data("brightness", brightness, brightness_relative)
+        if brightness_transition is not None:
+            if "brightness" in data:
+                data["brightness"]["duration"] = brightness_transition
+        await _add_topic_to_data("ct", color_temperature, color_temperature_relative)
+        await _add_topic_to_data("hue", hue, hue_relative)
+        await _add_topic_to_data("sat", saturation, saturation_relative)
+        await _add_topic_to_data("on", on)  # "on" must be the last key in data
+        if data:
+            await self._request("put", "state", data)
+
     async def _set_state(
         self,
         topic: str,

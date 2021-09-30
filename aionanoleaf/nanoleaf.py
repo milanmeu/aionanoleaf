@@ -20,7 +20,13 @@ from __future__ import annotations
 
 import json
 
-from aiohttp import ClientConnectorError, ClientResponse, ClientSession
+from aiohttp import (
+    ClientConnectorError,
+    ClientResponse,
+    ClientSession,
+    ClientTimeout,
+    ServerTimeoutError,
+)
 
 from .exceptions import InvalidEffect, InvalidToken, NoAuthToken, Unauthorized, Unavailable
 from .typing import InfoData
@@ -28,6 +34,8 @@ from .typing import InfoData
 
 class Nanoleaf:
     """Nanoleaf device."""
+
+    _REQUEST_TIMEOUT = ClientTimeout(sock_connect=5)
 
     def __init__(
         self,
@@ -180,11 +188,13 @@ class Nanoleaf:
         self, method: str, path: str, data: dict | None = None
     ) -> ClientResponse:
         """Make an authorized request to Nanoleaf with an auth_token."""
+        url = f"{self._api_url}/{self.auth_token}/{path}"
+        data = json.dumps(data)
         try:
-            resp = await self._session.request(
-                method, f"{self._api_url}/{self.auth_token}/{path}", data=json.dumps(data)
-            )
+            resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
         except ClientConnectorError as err:
+            raise Unavailable from err
+        except ServerTimeoutError as err:
             raise Unavailable from err
         if resp.status == 401:
             raise InvalidToken

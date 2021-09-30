@@ -22,6 +22,7 @@ import json
 
 from aiohttp import ClientConnectorError, ClientResponse, ClientSession
 
+from .exceptions import InvalidEffect, InvalidToken, NoAuthToken, Unauthorized, Unavailable
 from .typing import InfoData
 
 
@@ -270,27 +271,3 @@ class Nanoleaf:
             await self._set_state("on", False)
         else:
             await self.set_brightness(0, transition=transition)
-
-
-class NanoleafException(Exception):
-    """General Nanoleaf exception."""
-
-
-class Unavailable(NanoleafException):
-    """Device is unavailable."""
-
-
-class Unauthorized(NanoleafException):
-    """Not authorizing new tokens."""
-
-
-class InvalidToken(NanoleafException):
-    """Invalid token specified."""
-
-
-class InvalidEffect(NanoleafException, ValueError):
-    """Invalid effect specified."""
-
-
-class NoAuthToken(NanoleafException):
-    """No auth_token specified."""

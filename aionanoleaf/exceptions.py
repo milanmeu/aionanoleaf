@@ -15,6 +15,28 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with aionanoleaf.  If not, see <https://www.gnu.org/licenses/>.
 
-"""aioNanoleaf."""
-from .nanoleaf import *  # noqa: F401, F403
-from .exceptions import *  # noqa: F401, F403
+"""Nanoleaf exceptions."""
+
+
+class NanoleafException(Exception):
+    """General Nanoleaf exception."""
+
+
+class InvalidEffect(NanoleafException, ValueError):
+    """Invalid effect specified."""
+
+
+class InvalidToken(NanoleafException):
+    """Invalid token specified."""
+
+
+class NoAuthToken(NanoleafException):
+    """No auth_token specified."""
+
+
+class Unauthorized(NanoleafException):
+    """Not authorizing new tokens."""
+
+
+class Unavailable(NanoleafException):
+    """Device is unavailable."""

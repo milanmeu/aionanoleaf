@@ -25,6 +25,7 @@ from aiohttp import (
     ClientResponse,
     ClientSession,
     ClientTimeout,
+    ServerDisconnectedError,
     ServerTimeoutError,
 )
 
@@ -191,6 +192,9 @@ class Nanoleaf:
         url = f"{self._api_url}/{self.auth_token}/{path}"
         data = json.dumps(data)
         try:
+            resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
+        except ServerDisconnectedError:
+            # Retry request once if the device disconnected
             resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
         except ClientConnectorError as err:
             raise Unavailable from err

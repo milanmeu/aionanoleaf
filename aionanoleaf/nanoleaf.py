@@ -213,7 +213,7 @@ class Nanoleaf:
         await self._request("delete", "")
         self._auth_token = None
 
-    async def get_info(self):
+    async def get_info(self) -> None:
         """Get all device info."""
         resp = await self._request("get", "")
         self._info = await resp.json()

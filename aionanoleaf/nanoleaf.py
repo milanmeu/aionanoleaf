@@ -50,7 +50,6 @@ class Nanoleaf:
         self._host = host
         self._auth_token = auth_token
         self._port = port
-        self._info: InfoData
 
     @property
     def host(self) -> str:
@@ -74,107 +73,107 @@ class Nanoleaf:
     @property
     def name(self) -> str:
         """Return the name."""
-        return self._info["name"]
+        return self._name
 
     @property
     def serial_no(self) -> str:
         """Return the serialNo."""
-        return self._info["serialNo"]
+        return self._serial_no
 
     @property
     def manufacturer(self) -> str:
         """Return the manufacturer."""
-        return self._info["manufacturer"]
+        return self._manufacturer
 
     @property
     def firmware_version(self) -> str:
         """Return the firmware version."""
-        return self._info["firmwareVersion"]
+        return self._firmware_version
 
     @property
     def model(self) -> str:
         """Return the model."""
-        return self._info["model"]
+        return self._model
 
     @property
     def is_on(self) -> bool:
         """Return if the Nanoleaf is on."""
-        return self._info["state"]["on"]["value"]
+        return self._is_on
 
     @property
     def brightness(self) -> int:
         """Return the brightness."""
-        return self._info["state"]["brightness"]["value"]
+        return self._brightness
 
     @property
     def brightness_max(self) -> int:
         """Return the maximum brightness."""
-        return self._info["state"]["brightness"]["max"]
+        return self._brightness_max
 
     @property
     def brightness_min(self) -> int:
         """Return the minimum brightness."""
-        return self._info["state"]["brightness"]["min"]
+        return self._brightness_min
 
     @property
     def hue(self) -> int:
         """Return the hue."""
-        return self._info["state"]["hue"]["value"]
+        return self._hue
 
     @property
     def hue_max(self) -> int:
         """Return the maximum hue."""
-        return self._info["state"]["hue"]["max"]
+        return self._hue_max
 
     @property
     def hue_min(self) -> int:
         """Return the minimum hue."""
-        return self._info["state"]["hue"]["min"]
+        return self._hue_min
 
     @property
     def saturation(self) -> int:
         """Return the saturation."""
-        return self._info["state"]["sat"]["value"]
+        return self._saturation
 
     @property
     def saturation_max(self) -> int:
         """Return the maximum saturation."""
-        return self._info["state"]["sat"]["max"]
+        return self._saturation_max
 
     @property
     def saturation_min(self) -> int:
         """Return the minimum saturation."""
-        return self._info["state"]["sat"]["min"]
+        return self._saturation_min
 
     @property
     def color_temperature(self) -> int:
         """Return the color temperature."""
-        return self._info["state"]["ct"]["value"]
+        return self._color_temperature
 
     @property
     def color_temperature_max(self) -> int:
         """Return the maximum color temperature."""
-        return self._info["state"]["ct"]["max"]
+        return self._color_temperature_max
 
     @property
     def color_temperature_min(self) -> int:
         """Return the minimum color temperature."""
-        return self._info["state"]["ct"]["min"]
+        return self._color_temperature_min
 
     @property
     def color_mode(self) -> str:
         """Return the color mode."""
-        return self._info["state"]["colorMode"]
+        return self._color_mode
 
     @property
     def effects_list(self) -> list[str]:
         """Return the effectsList."""
-        return self._info["effects"]["effectsList"]
+        return self._effects_list
 
     @property
     def effect(self) -> str:
         """Return the effect."""
-        return self._info["effects"]["select"]
+        return self._effect
 
     @property
     def selected_effect(self) -> str | None:
@@ -230,7 +229,28 @@ class Nanoleaf:
     async def get_info(self) -> None:
         """Get all device info."""
         resp = await self._request("get", "")
-        self._info = await resp.json()
+        data: InfoData = await resp.json()
+        self._name = data["name"]
+        self._serial_no = data["serialNo"]
+        self._manufacturer = data["manufacturer"]
+        self._firmware_version = data["firmwareVersion"]
+        self._model = data["model"]
+        self._is_on = data["state"]["on"]["value"]
+        self._brightness = data["state"]["brightness"]["value"]
+        self._brightness_max = data["state"]["brightness"]["max"]
+        self._brightness_min = data["state"]["brightness"]["min"]
+        self._hue = data["state"]["hue"]["value"]
+        self._hue_max = data["state"]["hue"]["max"]
+        self._hue_min = data["state"]["hue"]["min"]
+        self._saturation = data["state"]["sat"]["value"]
+        self._saturation_max = data["state"]["sat"]["max"]
+        self._saturation_min = data["state"]["sat"]["min"]
+        self._color_temperature = data["state"]["ct"]["value"]
+        self._color_temperature_max = data["state"]["ct"]["max"]
+        self._color_temperature_min = data["state"]["ct"]["min"]
+        self._color_mode = data["state"]["colorMode"]
+        self._effects_list = data["effects"]["effectsList"]
+        self._effect = data["effects"]["select"]
 
     async def set_state(
         self,

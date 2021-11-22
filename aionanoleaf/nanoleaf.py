@@ -210,16 +210,16 @@ class Nanoleaf:
 
         Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern and call authorize() within 30 seconds.
         """
-        async with self._session.post(f"{self._api_url}/new") as resp:
-            if resp.status == 403:
-                raise Unauthorized(
-                    "Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern and call authorize() within 30 seconds."
-                )
-            try:
-                resp.raise_for_status()
-            except ClientConnectorError:
-                raise Unavailable
-            self._auth_token = (await resp.json())["auth_token"]
+        try:
+            resp = await self._session.post(f"{self._api_url}/new")
+        except ClientConnectorError as err:
+            raise Unavailable from err
+        if resp.status == 403:
+            raise Unauthorized(
+                "Hold the on-off button down for 5-7 seconds until the LED starts flashing in a pattern and call authorize() within 30 seconds."
+            )
+        resp.raise_for_status()
+        self._auth_token = (await resp.json())["auth_token"]
 
     async def deauthorize(self) -> None:
         """Remove the auth_token from the Nanoleaf."""

@@ -18,6 +18,7 @@
 """Nanoleaf."""
 from __future__ import annotations
 
+import asyncio
 import json
 
 from aiohttp import (
@@ -26,7 +27,6 @@ from aiohttp import (
     ClientSession,
     ClientTimeout,
     ServerDisconnectedError,
-    ServerTimeoutError,
 )
 
 from .exceptions import InvalidEffect, InvalidToken, NoAuthToken, Unauthorized, Unavailable
@@ -36,7 +36,7 @@ from .typing import InfoData
 class Nanoleaf:
     """Nanoleaf device."""
 
-    _REQUEST_TIMEOUT = ClientTimeout(sock_connect=5)
+    _REQUEST_TIMEOUT = ClientTimeout(total=5, sock_connect=3)
 
     def __init__(
         self,
@@ -191,13 +191,14 @@ class Nanoleaf:
         url = f"{self._api_url}/{self.auth_token}/{path}"
         data = json.dumps(data)
         try:
-            resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
-        except ServerDisconnectedError:
-            # Retry request once if the device disconnected
-            resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
+            try:
+                resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
+            except ServerDisconnectedError:
+                # Retry request once if the device disconnected
+                resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
         except ClientConnectorError as err:
             raise Unavailable from err
-        except ServerTimeoutError as err:
+        except asyncio.TimeoutError as err:
             raise Unavailable from err
         if resp.status == 401:
             raise InvalidToken

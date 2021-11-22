@@ -341,3 +341,7 @@ class Nanoleaf:
             await self._set_state("on", False)
         else:
             await self.set_brightness(0, transition=transition)
+
+    async def identify(self) -> None:
+        """Identify the Nanoleaf."""
+        await self._request("put", "identify")

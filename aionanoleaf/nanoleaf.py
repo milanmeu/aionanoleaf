@@ -20,16 +20,26 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any, Callable, Coroutine
 
 from aiohttp import (
     ClientConnectorError,
+    ClientError,
     ClientResponse,
     ClientSession,
     ClientTimeout,
     ServerDisconnectedError,
 )
 
-from .exceptions import InvalidEffect, InvalidToken, NoAuthToken, Unauthorized, Unavailable
+from .events import EffectsEvent, LayoutEvent, StateEvent, TouchEvent
+from .exceptions import (
+    InvalidEffect,
+    InvalidToken,
+    NanoleafException,
+    NoAuthToken,
+    Unauthorized,
+    Unavailable,
+)
 from .typing import InfoData
 
 
@@ -189,13 +199,17 @@ class Nanoleaf:
     ) -> ClientResponse:
         """Make an authorized request to Nanoleaf with an auth_token."""
         url = f"{self._api_url}/{self.auth_token}/{path}"
-        data = json.dumps(data)
+        json_data = json.dumps(data)
         try:
             try:
-                resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
+                resp = await self._session.request(
+                    method, url, data=json_data, timeout=self._REQUEST_TIMEOUT
+                )
             except ServerDisconnectedError:
                 # Retry request once if the device disconnected
-                resp = await self._session.request(method, url, data=data, timeout=self._REQUEST_TIMEOUT)
+                resp = await self._session.request(
+                    method, url, data=json_data, timeout=self._REQUEST_TIMEOUT
+                )
         except ClientConnectorError as err:
             raise Unavailable from err
         except asyncio.TimeoutError as err:
@@ -346,3 +360,56 @@ class Nanoleaf:
     async def identify(self) -> None:
         """Identify the Nanoleaf."""
         await self._request("put", "identify")
+
+    async def listen_events(
+        self,
+        state_callback: Callable[[StateEvent], Any] | None = None,
+        layout_callback: Callable[[LayoutEvent], Any] | None = None,
+        effects_callback: Callable[[EffectsEvent], Any] | None = None,
+        touch_callback: Callable[[TouchEvent], Any] | None = None,
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
+        """Listen to events, apply changes to object and call callback with event."""
+        path = f"events?id={StateEvent.EVENT_TYPE_ID}, {EffectsEvent.EVENT_TYPE_ID}"
+        if layout_callback is not None:
+            path += f",{LayoutEvent.EVENT_TYPE_ID}"
+        if touch_callback is not None:
+            path += f",{TouchEvent.EVENT_TYPE_ID}"
+        while True:
+            try:
+                async with self._session.get(
+                    f"{self._api_url}/{self.auth_token}/{path}"
+                ) as resp:
+                    while True:
+                        id_line = await resp.content.readline()
+                        data_line = await resp.content.readline()
+                        await resp.content.readline()  # Empty line
+                        if resp.closed:
+                            return
+                        event_type_id = int(str(id_line)[6:-3])
+                        data = json.loads(str(data_line)[8:-3])
+                        events: list = data["events"]
+                        for event_data in events:
+                            if event_type_id == StateEvent.EVENT_TYPE_ID:
+                                event = StateEvent(event_data)
+                                setattr(self, f"_{event.attribute}", event.value)
+                                if state_callback is not None:
+                                    asyncio.create_task(state_callback(event))
+                            elif event_type_id == LayoutEvent.EVENT_TYPE_ID:
+                                layout_event = LayoutEvent(event_data)
+                                if layout_callback is not None:
+                                    asyncio.create_task(layout_callback(layout_event))
+                            elif event_type_id == EffectsEvent.EVENT_TYPE_ID:
+                                effects_event = EffectsEvent(event_data)
+                                self._effect = effects_event.effect
+                                if effects_callback is not None:
+                                    asyncio.create_task(effects_callback(effects_event))
+                            elif event_type_id == TouchEvent.EVENT_TYPE_ID:
+                                touch_event = TouchEvent(event_data)
+                                if touch_callback is not None:
+                                    asyncio.create_task(touch_callback(touch_event))
+                            else:
+                                raise NanoleafException(
+                                    f"Unknown event type id {event_type_id}"
+                                )
+            except ClientError:
+                await asyncio.sleep(5)

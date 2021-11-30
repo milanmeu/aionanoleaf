@@ -101,3 +101,30 @@ class LightPanelsInfoData(InfoData):
     """Nanoleaf API Light Panels info."""
 
     rhythm: dict
+
+
+class StateEventData(TypedDict):
+    """Nanoleaf API State event data."""
+
+    attr: int
+    value: str | int
+
+
+class LayoutEventData(TypedDict):
+    """Nanoleaf API Layout event data."""
+
+    attr: int
+
+
+class EffectsEventData(TypedDict):
+    """Nanoleaf API Effects event data."""
+
+    attr: int
+    value: str
+
+
+class TouchEventData(TypedDict):
+    """Nanoleaf API Touch event data."""
+
+    gesture: int
+    panelId: int

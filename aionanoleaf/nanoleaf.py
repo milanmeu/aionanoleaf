@@ -377,7 +377,8 @@ class Nanoleaf:
         while True:
             try:
                 async with self._session.get(
-                    f"{self._api_url}/{self.auth_token}/{path}"
+                    f"{self._api_url}/{self.auth_token}/{path}",
+                    timeout=ClientTimeout(total=None, sock_connect=5, sock_read=None),
                 ) as resp:
                     while True:
                         id_line = await resp.content.readline()

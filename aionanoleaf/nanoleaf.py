@@ -101,6 +101,11 @@ class Nanoleaf:
         return self._firmware_version
 
     @property
+    def hardware_version(self) -> str:
+        """Return the hardware version."""
+        return self._hardware_version
+
+    @property
     def model(self) -> str:
         """Return the model."""
         return self._model
@@ -249,6 +254,7 @@ class Nanoleaf:
         self._serial_no = data["serialNo"]
         self._manufacturer = data["manufacturer"]
         self._firmware_version = data["firmwareVersion"]
+        self._hardware_version = data["hardwareVersion"]
         self._model = data["model"]
         self._is_on = data["state"]["on"]["value"]
         self._brightness = data["state"]["brightness"]["value"]

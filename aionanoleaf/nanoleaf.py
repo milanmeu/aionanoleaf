@@ -367,7 +367,7 @@ class Nanoleaf:
         layout_callback: Callable[[LayoutEvent], Any] | None = None,
         effects_callback: Callable[[EffectsEvent], Any] | None = None,
         touch_callback: Callable[[TouchEvent], Any] | None = None,
-    ) -> Callable[[], Coroutine[Any, Any, None]]:
+    ) -> None:
         """Listen to events, apply changes to object and call callback with event."""
         path = f"events?id={StateEvent.EVENT_TYPE_ID}, {EffectsEvent.EVENT_TYPE_ID}"
         if layout_callback is not None:

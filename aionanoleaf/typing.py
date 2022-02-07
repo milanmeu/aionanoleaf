@@ -85,6 +85,7 @@ class InfoData(TypedDict):
     serialNo: str
     manufacturer: str
     firmwareVersion: str
+    hardwareVersion: str | None
     model: str
     state: StateData
     effects: EffectsData

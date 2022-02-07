@@ -20,7 +20,12 @@ from __future__ import annotations
 
 from abc import ABC
 
-from .typing import EffectsEventData, LayoutEventData, StateEventData, TouchEventData
+from .typing import (
+    EffectsEventData,
+    LayoutEventData,
+    StateEventData,
+    TouchEventData,
+)
 
 SINGLE_TAP = "Single Tap"
 DOUBLE_TAP = "Double Tap"
@@ -142,3 +147,53 @@ class TouchEvent(Event):
         """Return panel ID if gesture has an associated panel else None."""
         panel_id = self._event_data["panelId"]
         return None if panel_id == -1 else panel_id
+
+
+class TouchStreamEvent:
+    """Nanoleaf touch stream event."""
+
+    def __init__(
+        self,
+        panel_id: int,
+        touch_type_id: int,
+        strength: int,
+        panel_id_2: int,
+    ) -> None:
+        """Init Nanoleaf touch stream event."""
+        self._panel_id = panel_id
+        self._touch_type_id = touch_type_id
+        self._strength = strength
+        self._panel_id_2 = panel_id_2
+
+    @property
+    def panel_id(self) -> int:
+        """Return touch panel ID."""
+        return self._panel_id
+
+    @property
+    def touch_type_id(self) -> int:
+        """Return touch type ID."""
+        return self._touch_type_id
+
+    @property
+    def touch_type(self) -> str:
+        """Return touch type."""
+        return {
+            0: "Hover",
+            1: "Down",
+            2: "Hold",
+            3: "Up",
+            4: "Swipe",
+        }.get(self._touch_type_id, str(self._touch_type_id))
+
+    @property
+    def strength(self) -> int:
+        """Return touch strength."""
+        return self._strength
+
+    @property
+    def panel_id_2(self) -> int | None:
+        """Return second panel ID."""
+        if self._panel_id_2 == 2 ^ 16:
+            return None
+        return self._panel_id_2

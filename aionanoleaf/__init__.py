@@ -19,3 +19,4 @@
 from .nanoleaf import *  # noqa: F401, F403
 from .events import *  # noqa: F401, F403
 from .exceptions import *  # noqa: F401, F403
+from .layout import *  # noqa: F401, F403

@@ -51,6 +51,7 @@ from .exceptions import (
     Unavailable,
 )
 from .layout import Panel
+from .stream import _NanoleafStreamProtocol, Stream
 from .typing import InfoData
 
 _LOGGER = logging.getLogger(__name__)
@@ -352,6 +353,23 @@ class Nanoleaf:
         if effect not in self.effects_list:
             raise InvalidEffect
         await self._request("put", "effects", {"select": effect})
+
+    async def start_streaming(self):
+        resp = await self._request("put", "effects",
+                                   {"write": {"command": "display", "animType": "extControl",
+                                              "extControlVersion": "v2"}})
+        if resp.content_length == 0:
+            return self.host, 60222
+
+    async def steam(self):
+        host, port = await self.start_streaming()
+        print(host, port)
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _NanoleafStreamProtocol(),
+            remote_addr=(host, port),
+        )
+        return Stream(transport, protocol)
 
     async def set_brightness(
         self, brightness: int, relative: bool = False, transition: int | None = None

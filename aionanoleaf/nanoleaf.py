@@ -55,6 +55,8 @@ from .typing import InfoData
 
 _LOGGER = logging.getLogger(__name__)
 
+_LOGGER.error("You are using a test version of aionanoleaf to fix issue 67816")
+
 
 class Nanoleaf:
     """Nanoleaf device."""

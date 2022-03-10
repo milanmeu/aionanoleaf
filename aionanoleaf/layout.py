@@ -58,7 +58,7 @@ class Panel:
         self._x_coordinate = panel_data["x"]
         self._y_coordinate = panel_data["y"]
         self._orientation = panel_data["o"]
-        self._shape_type_id = panel_data["shapeType"]
+        self._shape_type_id = panel_data.get("shapeType", -1)
 
     @property
     def id(self) -> int:

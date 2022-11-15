@@ -214,6 +214,11 @@ class Nanoleaf:
         return self._panels
 
     @property
+    def palette(self) -> list[str]:
+        """Return the color palette."""
+        return self._palette
+
+    @property
     def _api_url(self) -> str:
         return f"http://{self.host}:{self.port}/api/v1"
 
@@ -293,6 +298,11 @@ class Nanoleaf:
         self._effects_list = data["effects"]["effectsList"]
         self._effect = data["effects"]["select"]
         self._panels = {Panel(panel) for panel in data["panelLayout"]["layout"]["positionData"]}
+
+        """Additional API call to retrieve palette."""
+        resp = await self._request("put", "effects", {"write": {"command": "request", "animName": data["effects"]["select"]}})
+        effect_data: InfoData = await resp.json()
+        self._palette = effect_data["palette"]
 
     async def set_state(
         self,

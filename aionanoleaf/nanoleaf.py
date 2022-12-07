@@ -30,7 +30,6 @@ from aiohttp import (
     ClientResponse,
     ClientSession,
     ClientTimeout,
-    ServerDisconnectedError,
     ClientConnectionError,
 )
 

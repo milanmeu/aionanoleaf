@@ -67,12 +67,14 @@ class Nanoleaf:
         host: str,
         auth_token: str | None = None,
         port: int = 16021,
+        retries: int = 3,
     ) -> None:
         """Initialize the Nanoleaf."""
         self._session = session
         self._host = host
         self._auth_token = auth_token
         self._port = port
+        self._retries = 3
 
     @property
     def host(self) -> str:
@@ -223,19 +225,16 @@ class Nanoleaf:
         """Make an authorized request to Nanoleaf with an auth_token."""
         url = f"{self._api_url}/{self.auth_token}/{path}"
         json_data = json.dumps(data)
-        try:
+        err = None
+        for attempt in range(self._retries):
             try:
                 resp = await self._session.request(
                     method, url, data=json_data, timeout=self._REQUEST_TIMEOUT
                 )
-            except ServerDisconnectedError:
-                # Retry request once if the device disconnected
-                resp = await self._session.request(
-                    method, url, data=json_data, timeout=self._REQUEST_TIMEOUT
-                )
-        except ClientConnectionError as err:
-            raise Unavailable from err
-        except asyncio.TimeoutError as err:
+                break
+            except ClientError as e:
+                err = e
+        if err is not None:
             raise Unavailable from err
         if resp.status == 401:
             raise InvalidToken

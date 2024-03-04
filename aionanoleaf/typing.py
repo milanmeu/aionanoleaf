@@ -129,6 +129,7 @@ class EffectsEventData(TypedDict):
     
 #class EmersionEventData(TypedDict):
 #    """Nanoleaf API Emersion event data."""
+#Keeping as a place holder until events are added
 
 #    attr: int
 

@@ -76,7 +76,10 @@ class EffectsData(TypedDict):
 
     select: str
     effectsList: list[str]
-
+    
+class EmersionData(TypedDict):
+    """Nanoleaf API Emersion data."""
+    screenMirrorMode: int
 
 class InfoData(TypedDict):
     """Nanoleaf API info."""
@@ -90,6 +93,7 @@ class InfoData(TypedDict):
     state: StateData
     effects: EffectsData
     panelLayout: PanelLayoutData
+    emersion: EmersionData
 
 
 class CanvasInfoData(InfoData):
@@ -122,6 +126,12 @@ class EffectsEventData(TypedDict):
 
     attr: int
     value: str
+    
+#class EmersionEventData(TypedDict):
+#    """Nanoleaf API Emersion event data."""
+
+#    attr: int
+
 
 
 class TouchEventData(TypedDict):

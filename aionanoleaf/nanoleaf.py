@@ -43,6 +43,7 @@ from .events import (
 
 from .exceptions import (
     InvalidEffect,
+    InvalidEmersion,
     InvalidToken,
     NanoleafException,
     NoAuthToken,
@@ -208,6 +209,21 @@ class Nanoleaf:
     def selected_effect(self) -> str | None:
         """Return the selected effect."""
         return self.effect if self.effect in self.effects_list else None
+    
+    @property
+    def emersion_list(self) -> list[int]:
+        """Return the emersionList."""
+        return self._emersion_list
+
+    @property
+    def emersion(self) -> int:
+        """Return the emersion."""
+        return self._emersion
+
+    @property
+    def selected_emersion(self) -> int | None:
+        """Return the selected emersion."""
+        return self.emersion if self.emersion in self.emersion_list else None
 
     @property
     def panels(self) -> set[Panel]:
@@ -306,6 +322,11 @@ class Nanoleaf:
         self._effects_list = data["effects"]["effectsList"]
         self._effect = data["effects"]["select"]
         self._panels = {Panel(panel) for panel in data["panelLayout"]["layout"]["positionData"]}
+        #4D/Emersion implementation.
+        self._emersion_list = [6,2,3,5] # 6 = 1D, 2 = 2D, 3 = 3D, 5 = 4D (No way to get the list from the device)
+        emersion_request = await self._request("put", "effects", {"write":{"command":"getScreenMirrorMode"}})
+        emersion_data: InfoData = await emersion_request.json()
+        self._emersion = emersion_data["screenMirrorMode"]
 
     async def set_state(
         self,
@@ -365,6 +386,16 @@ class Nanoleaf:
         if effect not in self.effects_list:
             raise InvalidEffect
         await self._request("put", "effects", {"select": effect})
+    
+    async def set_emersion(self, emersion: int) -> None:
+        """Write emersion mode to Nanoleaf 4D."""
+        if emersion not in self.emersion_list:
+            raise InvalidEmersion
+        await self._request("put", "effects", {"write": {"command": "activateScreenMirror", "screenMirrorMode": emersion }})
+        #This definitely is not an efficient way to update the 4D mode 
+        #value but the only way to get it is to make an http call plus
+        #I don't want to just change the variable without knowing if the device has been updated
+        await self.get_info()
 
     async def set_brightness(
         self, brightness: int, relative: bool = False, transition: int | None = None
@@ -469,6 +500,8 @@ class Nanoleaf:
                             elif event_type_id == EffectsEvent.EVENT_TYPE_ID:
                                 effects_event = EffectsEvent(event_data)
                                 self._effect = effects_event.effect
+                                if effects_event.effect == "*Emersion*":
+                                   self.get_info()
                                 if effects_callback is not None:
                                     asyncio.create_task(effects_callback(effects_event))
                             elif event_type_id == TouchEvent.EVENT_TYPE_ID:

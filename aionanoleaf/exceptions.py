@@ -25,6 +25,8 @@ class NanoleafException(Exception):
 class InvalidEffect(NanoleafException, ValueError):
     """Invalid effect specified."""
 
+class InvalidEmersion(NanoleafException, ValueError):
+    """Invalid emersion specified."""
 
 class InvalidToken(NanoleafException):
     """Invalid token specified."""

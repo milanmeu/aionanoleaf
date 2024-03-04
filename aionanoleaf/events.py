@@ -22,6 +22,7 @@ from abc import ABC
 
 from .typing import (
     EffectsEventData,
+    #EmersionEventData,
     LayoutEventData,
     StateEventData,
     TouchEventData,
@@ -114,6 +115,34 @@ class EffectsEvent(Event):
     def effect(self) -> str:
         """Return the active effect."""
         return self._event_data["value"]
+    
+# class EmersionEvent(Event):
+#     """Nanoleaf Emersion (4D) event. Not implemented yet since there are no events for this in the api :("""
+
+#     EVENT_TYPE_ID = 5
+
+#     def __init__(self, event_data: EmersionEventData) -> None:
+#         """Init Nanoleaf emersion event."""
+#         self._event_data = event_data
+
+#     @property
+#     def attribute_id(self) -> int:
+#         """Return event attribute ID."""
+#         return self._event_data["attr"]
+
+#     @property
+#     def effect(self) -> str:
+#         """Return the active Emersion mode."""
+#         return self._event_data["value"]
+    
+#     def emersion(self) -> int:
+#         """Return event attribute."""
+#         return {
+#             1: 6, #1D
+#             2: 2, #2D
+#             3: 3, #3D
+#             4: 5, #4D
+#         }[self.attribute_id]
 
 
 class TouchEvent(Event):

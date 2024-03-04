@@ -126,13 +126,6 @@ class EffectsEventData(TypedDict):
 
     attr: int
     value: str
-    
-#class EmersionEventData(TypedDict):
-#    """Nanoleaf API Emersion event data."""
-
-#    attr: int
-
-
 
 class TouchEventData(TypedDict):
     """Nanoleaf API Touch event data."""

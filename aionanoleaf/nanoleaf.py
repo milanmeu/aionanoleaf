@@ -322,7 +322,7 @@ class Nanoleaf:
         self._effects_list = data["effects"]["effectsList"]
         self._effect = data["effects"]["select"]
         self._panels = {Panel(panel) for panel in data["panelLayout"]["layout"]["positionData"]}
-        #4D/Emersion implementation.
+        #4D/Emersion implementation. (This is how they spelt emersion in the API, probably should be Immersion)
         self._emersion_list = [6,2,3,5] # 6 = 1D, 2 = 2D, 3 = 3D, 5 = 4D (No way to get the list from the device)
         emersion_request = await self._request("put", "effects", {"write":{"command":"getScreenMirrorMode"}})
         emersion_data: InfoData = await emersion_request.json()

@@ -4,11 +4,11 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="aionanoleaf",
-    version="0.2.1",
+    name="aionanoleaf4d",
+    version="0.2.2",
     author="Milan Meulemans",
     author_email="milan.meulemans@live.be",
-    description="Async Python package for the Nanoleaf API",
+    description="Async Python package for the Nanoleaf API with basic 4d support",
     keywords="nanoleaf api canvas shapes elements light panels",
     license="LGPLv3+",
     long_description=long_description,

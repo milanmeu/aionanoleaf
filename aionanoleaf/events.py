@@ -115,7 +115,6 @@ class EffectsEvent(Event):
         """Return the active effect."""
         return self._event_data["value"]
 
-
 class TouchEvent(Event):
     """Nanoleaf touch event."""
 

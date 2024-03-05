@@ -510,7 +510,7 @@ class Nanoleaf:
                                 effects_event = EffectsEvent(event_data)
                                 self._effect = effects_event.effect
                                 if effects_event.effect == "*Emersion*":
-                                   self.get_emersion()
+                                   await self.get_emersion()
                                 if effects_callback is not None:
                                     asyncio.create_task(effects_callback(effects_event))
                             elif event_type_id == TouchEvent.EVENT_TYPE_ID:

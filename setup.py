@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="aionanoleaf4d",
+    name="aionanoleaf",
     version="0.2.1",
     author="Milan Meulemans",
     author_email="milan.meulemans@live.be",
